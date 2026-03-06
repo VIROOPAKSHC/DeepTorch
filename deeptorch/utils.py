@@ -24,17 +24,3 @@ def cross_entropy_loss_derivative(y_true, y_pred):
 def accuracy(y_true, y_pred):
     return float((y_true.reshape(-1,1)==y_pred.reshape(-1,1)).sum()/y_pred.shape[0])*100
 
-class MatMulError(Exception):
-    def __init__(self,message):
-        self.message = message
-        super().__init__(message)
-    def __str__(self):
-        return f"{self.message} has been raised when performing Matrix Multiplication"
-    
-class DimensionMisMatchError(Exception):
-    def __init__(self,message):
-        self.message = message 
-        super().__init__(message)
-    def __str__(self):
-        return f"{self.message} has been raised when checking for dimension match"
-    

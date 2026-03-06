@@ -2,7 +2,8 @@ from typing import Union
 import torch
 import pandas as pd
 import numpy as np
-from utils import *
+from deeptorch.utils import *
+from deeptorch.exceptions import *
 
 class Neuron:
     def __init__(self, in_features:int, out_features:int = 1):
