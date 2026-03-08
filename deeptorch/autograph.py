@@ -34,7 +34,7 @@ class Value(Node):
         return output
     
     def __rmul__(self,right:Union[Self, int, float,np.array]):
-        output = self*right
+        output = right*self
         return output
 
     def __sub__(self,right: Union[Self, int, float,np.array]):

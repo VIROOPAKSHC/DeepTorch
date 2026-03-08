@@ -31,7 +31,7 @@ class Node:
         return self.next==None
 
     def __rsub__(self,other):
-        return self-other
+        return other-self
 
     def __radd__(self,other):
-        return self-other
+        return other+self

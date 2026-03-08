@@ -14,7 +14,7 @@ def cross_entropy_loss(y_true, y_pred, reduction: str = 'mean'):
     loss = -np.sum(y_true * np.log(y_pred) + (1 - y_true) * np.log(1 - y_pred))
 
     if reduction == 'mean':
-        return round(loss/y_true.shape[0],4)
+        return loss/y_true.shape[0]
     else:
         return loss
 
