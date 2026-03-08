@@ -1,7 +1,7 @@
 from typing import Union, Self
 import numpy as np
 from deeptorch.node import Node
-from deeptorch.exceptions import *
+from deeptorch.utils.exceptions import *
 
 class Value(Node):
     def __init__(self,value: Union[int, float, np.array] = None, name:str=None):

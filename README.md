@@ -29,3 +29,9 @@ Constrained version of operations for backpropagation of values, nodes and compu
 
 ### Higher-level API:
 1. 
+
+### TODO:
+1. deeptorch/utils/dtypes.py
+2. Build custom context manager: (See here for reference)[https://book.pythontips.com/en/latest/context_managers.html]
+3. Graph IR sources: (Source 1 - paper)[https://grothoff.org/christian/teaching/2007/3353/papers/click95simple.pdf], (ONNX-Repo)[https://onnx.ai/onnx/repo-docs/IR.html#extensible-computation-graph-model]
+4. Dunder methods for reference - (All dunder methods)[https://www.pythonmorsels.com/every-dunder-method/] 
