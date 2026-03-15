@@ -4,7 +4,7 @@ import numpy as np
 class Operator(ABC):
     def __init__(self, name):
         self.name = name
-
+        self.req_operands = None
     @classmethod
     @abstractmethod
     def forward():
@@ -28,6 +28,7 @@ class Operator(ABC):
 class Add(Operator):
     def __init__(self, name: str = 'Add'):
         super().__init__(name)
+        self.req_operands = 2
 
     def forward(x, y):
         return x + y
@@ -38,6 +39,7 @@ class Add(Operator):
 class Sub(Operator):
     def __init__(self, name: str = 'Sub'):
         super().__init__(name)
+        self.req_operands = 2
 
     def forward(x, y):
         return x - y
@@ -48,7 +50,7 @@ class Sub(Operator):
 class Mul(Operator):
     def __init__(self, name: str='Mul'):
         super(). __init__(name)
-
+        self.req_operands = 2
     def forward(x,y):
         return x*y
 
@@ -58,13 +60,46 @@ class Mul(Operator):
 class MatMul(Operator):
     def __init__(self, name: str='MatMul'):
         super().__init__(name)
-    
+        self.req_operands = 2
+
     def forward(x,y):
         return x@y
     
     def backward(x, y,ref_gradient = None):
         return (y.transpose(), x.transpose())
+
+class Sigmoid(Operator):
+    def __init__(self,name:str='Sigmoid'):
+        super().__init__(name)
+        self.req_operands = 1
+    def forward(x):
+        return 1/(1+np.exp(-x))
     
+    def backward(x, ref_gradient=None):
+        sigm = Sigmoid.forward(x)
+        return sigm*(1-sigm)
+
+class ReLU(Operator):
+    def __init__(self,name:str='ReLU'):
+        super().__init__(name)
+        self.req_operands=1
+    
+    def forward(x):
+        return np.max(np.stack(x,np.zeros_like(x)),axis=0)
+
+    def backward(x, ref_grad=None):
+        # TODO: How to write backward for ReLU?
+        pass
+
+class Softmax(Operator):
+    def __init__(self,name:str='Softmax'):
+        super().__init__(name)
+        self.req_operands=1
+    def forward(x):
+        pass
+
+    def backward(x, ref_gradient=None):
+        pass
 
 ### TESTS ###
 

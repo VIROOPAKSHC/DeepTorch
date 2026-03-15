@@ -1,4 +1,4 @@
-from deeptorch.neuron import *
+from deeptorch.neuron_v1 import *
 
 def main(X,y):
     neuron = Neuron(X.shape[1])

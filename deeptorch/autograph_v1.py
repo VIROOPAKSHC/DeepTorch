@@ -1,6 +1,6 @@
 from typing import Union, Self
 import numpy as np
-from deeptorch.node import Node
+from deeptorch.node_v1 import Node
 from deeptorch.utils.exceptions import *
 
 class Value(Node):

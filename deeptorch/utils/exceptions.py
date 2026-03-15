@@ -18,3 +18,4 @@ class GraphPropagationError(CustomError):
 class ArgumentInvalidError(CustomError):
     def __str__(self):
         return f"{self.message} has been raised. Check Arguments."
+    
