@@ -59,7 +59,7 @@ class Tensor:
     def __radd__(self, other: Self):
         if not isinstance(other,Tensor):
             other = Tensor(other)
-        return Tensor(other.value + self.value,dtype=other.dtype, shape=other.shape, type=other.type)
+        return Tensor(other.value + self.value,dtype=self.dtype, shape=self.shape, type=self.type)
 
     def __sub__(self, other: Self):
         if not isinstance(other,Tensor):
@@ -69,7 +69,7 @@ class Tensor:
     def __rsub__(self, other: Self):
         if not isinstance(other,Tensor):
             other = Tensor(other)
-        return Tensor(other.value - self.value, dtype=other.dtype, shape=other.dtype, type = other.type)
+        return Tensor(other.value - self.value, dtype=self.dtype, shape=self.shape, type = self.type)
 
     def __mul__(self, other: Self):
         # This is a dot product, not the matrix multiplication
@@ -79,6 +79,7 @@ class Tensor:
             prod = self.value*other.value
             return Tensor(prod, dtype = self.dtype, shape = prod.shape, type = self.type)
         else:
+            raise GraphPropagationError(f"Shape mismatch while product,{self.shape} and {other.shape} ")
             pass
             # TODO: Handle the mismatch in the shapes
     
@@ -87,7 +88,7 @@ class Tensor:
             other = Tensor(other)
         if other.shape == self.shape:
             prod = other.value*self.value
-            return Tensor(prod, dtype = other.dtype, shape = prod.shape, type = other.type)
+            return Tensor(prod, dtype = self.dtype, shape = prod.shape, type = self.type)
         else:
             pass
             # TODO: Handle the mismatch in the shapes

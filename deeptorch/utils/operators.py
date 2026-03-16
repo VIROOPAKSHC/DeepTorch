@@ -9,11 +9,6 @@ class Operator(ABC):
     @abstractmethod
     def forward():
         pass
-
-    @classmethod
-    @abstractmethod
-    def backward():
-        pass
     
     @classmethod
     def __call__(self,*inputs):
@@ -33,8 +28,8 @@ class Add(Operator):
     def forward(x, y):
         return x + y
 
-    def backward(x, y, ref_gradient = None):
-        return (np.ones_like(x), np.ones_like(y))
+    def backward(self,x, y, forward_compute = None):
+        return np.array([np.ones_like(x), np.ones_like(y)])
 
 class Sub(Operator):
     def __init__(self, name: str = 'Sub'):
@@ -44,8 +39,8 @@ class Sub(Operator):
     def forward(x, y):
         return x - y
 
-    def backward(x, y, ref_gradient = None):
-        return (np.ones_like(x), -np.ones_like(y))
+    def backward(self,x, y, forward_compute = None):
+        return np.array([np.ones_like(x), -np.ones_like(y)])
 
 class Mul(Operator):
     def __init__(self, name: str='Mul'):
@@ -54,8 +49,8 @@ class Mul(Operator):
     def forward(x,y):
         return x*y
 
-    def backward(x,y,ref_gradient = None):
-        return (y,x)
+    def backward(self,x,y,forward_compute = None):
+        return np.array([y,x])
 
 class MatMul(Operator):
     def __init__(self, name: str='MatMul'):
@@ -65,19 +60,19 @@ class MatMul(Operator):
     def forward(x,y):
         return x@y
     
-    def backward(x, y,ref_gradient = None):
-        return (y.transpose(), x.transpose())
+    def backward(self,x, y,forward_compute = None):
+        return np.array([y.transpose(), x.transpose()])
 
 class Sigmoid(Operator):
     def __init__(self,name:str='Sigmoid'):
         super().__init__(name)
         self.req_operands = 1
+
     def forward(x):
         return 1/(1+np.exp(-x))
     
-    def backward(x, ref_gradient=None):
-        sigm = Sigmoid.forward(x)
-        return sigm*(1-sigm)
+    def backward(self, x, forward_compute):
+        return forward_compute*(1-forward_compute)
 
 class ReLU(Operator):
     def __init__(self,name:str='ReLU'):
@@ -87,7 +82,7 @@ class ReLU(Operator):
     def forward(x):
         return np.max(np.stack(x,np.zeros_like(x)),axis=0)
 
-    def backward(x, ref_grad=None):
+    def backward(self,x, forward_compute=None):
         # TODO: How to write backward for ReLU?
         pass
 
@@ -98,7 +93,7 @@ class Softmax(Operator):
     def forward(x):
         pass
 
-    def backward(x, ref_gradient=None):
+    def backward(self,x, forward_compute=None):
         pass
 
 ### TESTS ###
