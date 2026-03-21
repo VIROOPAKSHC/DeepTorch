@@ -1,14 +1,21 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 import numpy as np
+from tensor import Tensor
+"""
+backward() always returns a list of gradients with respect to each of the operands.
+"""
+
+def backprop_shape_conversion(current,target):
+    if (current.shape[1] == target.shape[0]) and len(target.shape)==1:
+        return current.sum(axis=0)
+    else:
+        print("Not possible to reshape")
+        return current
 
 class Operator(ABC):
     def __init__(self, name):
         self.name = name
         self.req_operands = None
-    @classmethod
-    @abstractmethod
-    def forward():
-        pass
     
     @classmethod
     def __call__(self,*inputs):
@@ -28,8 +35,12 @@ class Add(Operator):
     def forward(x, y):
         return x + y
 
-    def backward(self,x, y, forward_compute = None):
-        return np.array([np.ones_like(x), np.ones_like(y)])
+    def backward(self,x, y, forward_compute,curr_agg_grad):
+        # TODO: Handle Bias's reduced over the batch axis
+        inputs = [x,y]
+        grads = [curr_agg_grad, curr_agg_grad]
+        grads = [backprop_shape_conversion(grad,target) for (grad,target) in zip(grads,inputs)]
+        return grads
 
 class Sub(Operator):
     def __init__(self, name: str = 'Sub'):
@@ -39,8 +50,12 @@ class Sub(Operator):
     def forward(x, y):
         return x - y
 
-    def backward(self,x, y, forward_compute = None):
-        return np.array([np.ones_like(x), -np.ones_like(y)])
+    def backward(self,x, y, forward_compute ,curr_agg_grad):
+        # TODO: Handle Bias's reduced over the batch axis
+        grads= [curr_agg_grad, -curr_agg_grad]
+        inputs = [x,y]
+        grads = [backprop_shape_conversion(grad,target) for (grad,target) in zip(grads,inputs)]
+        return grads
 
 class Mul(Operator):
     def __init__(self, name: str='Mul'):
@@ -49,8 +64,8 @@ class Mul(Operator):
     def forward(x,y):
         return x*y
 
-    def backward(self,x,y,forward_compute = None):
-        return np.array([y,x])
+    def backward(self,x,y,forward_compute,curr_agg_grad):
+        return [curr_agg_grad*y,curr_agg_grad*x]
 
 class MatMul(Operator):
     def __init__(self, name: str='MatMul'):
@@ -60,8 +75,8 @@ class MatMul(Operator):
     def forward(x,y):
         return x@y
     
-    def backward(self,x, y,forward_compute = None):
-        return np.array([y.transpose(), x.transpose()])
+    def backward(self,x, y,forward_compute,curr_agg_grad):
+        return [curr_agg_grad@y.transpose(), x.transpose()@curr_agg_grad]
 
 class Sigmoid(Operator):
     def __init__(self,name:str='Sigmoid'):
@@ -71,8 +86,21 @@ class Sigmoid(Operator):
     def forward(x):
         return 1/(1+np.exp(-x))
     
-    def backward(self, x, forward_compute):
-        return forward_compute*(1-forward_compute)
+    def backward(self, x, forward_compute,curr_agg_grad):
+        # print(forward_compute)
+        return [(forward_compute*(1-forward_compute))*curr_agg_grad]
+
+class Broadcast(Operator):
+    def __init__(self,name:str='Broadcast'):
+        super().__init__(name)
+        self.req_operands=1
+    
+    def forward(x,shape):
+        return np.broadcast_to(x,shape)
+
+    def backward(self,x,shape,forward_compute,curr_agg_grad):
+        return [curr_agg_grad]
+
 
 class ReLU(Operator):
     def __init__(self,name:str='ReLU'):
@@ -80,7 +108,7 @@ class ReLU(Operator):
         self.req_operands=1
     
     def forward(x):
-        return np.max(np.stack(x,np.zeros_like(x)),axis=0)
+        return np.max(np.stack(x,np.zeros_like(x)),axis=0) # TODO: Change this
 
     def backward(self,x, forward_compute=None):
         # TODO: How to write backward for ReLU?

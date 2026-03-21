@@ -2,6 +2,7 @@ from operators import Operator
 from tensor import Parameter, Tensor
 import unittest
 from exceptions import *
+import numpy as np
 
 POSSIBLE_TYPES = ['operator','data','param']
 class graphEntity:
@@ -63,23 +64,21 @@ class graphEntity:
         self.forward_compute = self.object(*input_args)
         return self.forward_compute
 
-    def backward(self, input_edges):
-        ## ORDER OF OPERATIONS WHILE BUILDING THE GRAPH IS IMPORTANT
+    def backward(self, parent_cache,curr_agg_grad):
+        ## NOTE: ORDER OF OPERATIONS IN THE PARENT CACHE WHILE BUILDING THE GRAPH IS IMPORTANT
+        # The gradients from the children are summed directly.
         # TODO: Properly implement the backward() function and the arguments accordingly - think about scalability
-        if self.type=='data':
-            self.backward_compute = ctxt_backward
+        if self.type!='operator':
+            self.backward_compute = curr_agg_grad
             return self.backward_compute
             # TODO: Handle receiving and passing backward computation
-        
-        elif self.type == 'param':
-            # TODO: Handle parameter backward
-            pass
-        if not self.object.req_operands == len(input_edges):
-            raise GraphPropagationError(f"Not Equal Operands received for the computation. {self.object} expects {self.object.req_operands}, but received: {len(input_edges)}")
+
+        if not self.object.req_operands == len(parent_cache):
+            raise GraphPropagationError(f"Not Equal Operands received for the computation. {self.object} expects {self.object.req_operands}, but received: {len(parent_cache)}")
         if not hasattr(self,'forward_compute'):
             self.forward()
         
-        self.backward_compute = self.object.backward(*input_edges,self.forward_compute)
+        self.backward_compute = self.object.backward(*parent_cache,self.forward_compute,curr_agg_grad)
         return self.backward_compute
     
     def __str__(self):

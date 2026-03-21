@@ -9,14 +9,13 @@ from exceptions import *
 
 class DAG:
     def __init__(self,root:graphEntity=None):
-        if isinstance(root,graphEntity):
-            self.__register_root(root)
         self.edges = defaultdict(list)
         self.nodes = set()
         self.backedges = defaultdict(list)
         self.in_count = defaultdict(int)
         self.out_count = defaultdict(int)
         self.backprop = defaultdict(list)
+        self.backward_cache = {}
         self.__version = 0
         if isinstance(root,graphEntity):
             self.__register_entity(root)
@@ -28,38 +27,31 @@ class DAG:
         if tail not in self.nodes:
             self.__register_entity(tail)
         
-        self.edges[head].append(tail)
-        self.in_count[tail]+=1
-        self.out_count[head]+=1
-        self.backedges[tail].append(head)
-        if head.type=='operator':
-            if not hasattr(self,'root'):
-                self.__register_root(head)
-        if tail.type=='operator':
-            if not hasattr(self,'root'):
-                self.__register_root(tail)
+        if not (tail in self.edges[head]):
+            self.edges[head].append(tail)
+            self.in_count[tail]+=1
+            self.out_count[head]+=1
+        
+        if not (head in self.backedges[tail]):
+            self.backedges[tail].append(head)
 
     def remove_edge(self,head,tail):
         # TODO: 
         pass
-
-    def __register_root(self,entity:graphEntity):
-        if not hasattr(self,'root') and entity.type == 'operator': 
-            # len(self.dag)==0 was earlier checked as well. Is it really needed? TODO: Find out!
-            self.edges[entity]=[]
-            self.root = entity
-        else:
-            print("Data node cannot be registered as node.")
         
     def __register_entity(self,entity:graphEntity):
-        if entity in self.edges:
+        if entity in self.edges and (entity in self.in_count) and (entity in self.out_count) and (entity in self.nodes):
             # TODO: Throw Warning saying the entity is already present in the dag.
             return
         self.edges[entity]=[]
+        self.in_count[entity]=0
+        self.out_count[entity]=0
         self.nodes.add(entity)
 
     def __build_forward(self):
-        # Instead of BFS, perform Topological Sort
+        # Using Kahn's algorithm to perform topological sort.
+
+        # TODO: Build a graph with list of list of nodes, where each list has nodes that can be performed in parallel.
         self.topo_order = []
         in_degrees = self.in_count.copy()
         queue = deque()
@@ -98,11 +90,28 @@ class DAG:
     def backward(self):
         if not hasattr(self,'topo_order'):
             self.forward()
-        ctxt_backward = 1
-        for node in self.topo_order[::-1]:
-            print("Node :",node)
-            ctxt_backward=node.backward(self.backedges[node],ctxt_backward)
-            # =node.backward_compute= 
+
+        reverse_topo = self.topo_order[::-1]
+        
+        for i in range(len(reverse_topo)):    
+            node = reverse_topo[i]
+            curr_agg_grad = self.backward_cache.get(node,None)
+            if curr_agg_grad is None:
+                shape = node.forward_compute.shape
+                curr_agg_grad = np.ones(shape)
+            
+            if node.type!='operator':
+                node.backward([],curr_agg_grad)
+                continue
+            
+            _ = node.backward([parent.forward_compute for parent in self.backedges[node]],curr_agg_grad)
+            # assert backward_compute == node.backward_compute
+            parents = self.backedges[node]
+            for j in range(len(parents)):
+                self.backward_cache[parents[j]] = self.backward_cache.get(parents[j],np.zeros_like(node.backward_compute[j])) + node.backward_compute[j]
+            
+        
+            
     
 if __name__=="__main__":
     dag = DAG()
@@ -110,24 +119,25 @@ if __name__=="__main__":
     W = ge(Parameter(np.array([[0.5,0.1],[-0.5,0.3],[0.9,-0.5]])),name='W')
     mul1 = ge(MatMul(),name='MatMul(X,W)')
     b = ge(Parameter(np.array([3,-1])),name='B')
+    # TODO: How to handle the implicit shape conversions in the backward.
     add1 = ge(Add(),name='Add(XW+B)')
     sigmoid = ge(Sigmoid(),name='Sigmoid(XW+B)')
     dag.add_edges([X,mul1],[W,mul1],[mul1,add1],[b,add1],[add1,sigmoid])
 
-    # Condensed all of the following into one line as above.
-    # dag.add_edge(X,mul1)
-    # dag.add_edge(W,mul1)
-    # dag.add_edge(mul1,add1)
-    # dag.add_edge(b,add1)
-    # dag.add_edge(add1,sigmoid)
-
-    # print('Graph as Adjacency List: \n',dag.dag)
     dag.forward()
-    # for node in dag.nodes:
-    #     if node.type!='operator':continue
-    #     print(f"{node}:, {dag.in_count[node]}, {dag.out_count[node]}")
-    #     print(f"forward compute: {node.forward_compute}")
     dag.backward()
-    print(dag.topo_order)
+    for node in dag.topo_order:
+        if node.type=='data':continue
+        print(node)
+        print(f"forward compute: {node.forward_compute}")
+        print(f"backward compute: {node.backward_compute}")
+        print()
 
+        
+    # A = ge(Tensor(np.array([[4,5],[6,8]])),name='A')
+    # B = ge(Tensor(np.array([[-1,-2],[-3,-4]])),name='B')
+    # C = ge(Tensor(np.array([[0,-4.3],[1.3,0.03]])),name='C')
+    # mul = ge(MatMul(),name='matmul(AB)')
+    # sum1 = ge(Add(),name='AB+C')
+    # dag.add_edges([A,mul],[B,mul],[mul,sum1],[C,sum1])
     
